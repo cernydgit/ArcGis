@@ -45,7 +45,7 @@ namespace ArcGisTests
             // Set the API key for authorization.
             ArcGISRuntimeEnvironment.ApiKey = "AAPTxy8BH1VEsoebNVZXo8HurEMzeuUawPxlfsqLe9tkCTCPP7xYcjZerHR-HQtBPihv-TqncKNuRxGAgA4lokP50as-2TcrK_FtUlK8ttRan-QbDZ8w7Zja7mZ83UlPR6cTeyLJ5Nd0uH1KgtLe6xBg-f7YVxQL4f8WL9YXiLwifUeCVPtiOsHjvTPsiZxWa7IUnSFQExHloRHkuvNKTgC3Di_aBfxWEO0loAPTD43KhPU.AT1_I7JIrk9I";
 
-            var stateName = "A";
+            var stateName = "Alabama";
             string formattedStateName = stateName.Trim().ToUpper();
 
             // Construct the query URL by appending /query to the layer URL.
@@ -53,12 +53,12 @@ namespace ArcGisTests
 
             // Build query parameters following the ArcGIS REST API schema, including the token for authorization.
             var parameters = new Dictionary<string, string>
-                {
-                    { "where", "upper(STATE_NAME) LIKE '%" + formattedStateName + "%'" },
-                    { "outFields", "*" },
-                    { "f", "json" },
-                    { "token", ArcGISRuntimeEnvironment.ApiKey } // added API key parameter for authorization
-                };
+            {
+                { "where", "upper(STATE_NAME) LIKE '%" + formattedStateName + "%'" },
+                { "outFields", "*" },
+                { "f", "json" },
+                { "token", ArcGISRuntimeEnvironment.ApiKey } // added API key parameter for authorization
+            };
 
             // Construct query string.
             var queryString = string.Join("&", parameters.Select(kvp =>
@@ -72,16 +72,11 @@ namespace ArcGisTests
 
             string jsonResponse = await response.Content.ReadAsStringAsync();
 
-            // Parse the JSON response.
-            using JsonDocument jsonDoc = JsonDocument.Parse(jsonResponse);
-            JsonElement root = jsonDoc.RootElement;
-
-            // Ensure the response contains a "features" property.
-            root.TryGetProperty("features", out JsonElement featuresElement)
-                .Should().BeTrue("JSON response should contain features property");
-
-            // Validate that the features array is not empty.
-            featuresElement.GetArrayLength().Should().BeGreaterThan(0, "There should be at least one feature in the result.");
+            // Deserialize the JSON response into a FeatureQueryResponse instance.
+            var featureResponse = JsonSerializer.Deserialize<FeatureQueryResponse>(jsonResponse);
+            featureResponse.Should().NotBeNull("Deserialization should result in a valid FeatureQueryResponse");
+            featureResponse.Features.Should().NotBeNull("Features should not be null");
+            featureResponse.Features.Should().NotBeEmpty("There should be at least one feature in the result.");
         }
     }
 }
